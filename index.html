@@ -1,71 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="style.css" />
-    <title>Analog Clock</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shift Timer</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(to bottom right, #e0eafc, #cfdef3);
+            margin: 0; /* Remove default body margin */
+        }
+
+        #shift-selection {
+            margin-bottom: 20px;
+        }
+
+        #timer {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: gold; /* You can use different colors */
+            top: -10px; /* Start above the viewport */
+            animation: confetti-fall 3s linear infinite; /* Adjust duration */
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; } /* Fall to bottom */
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="clock">
-            <div style="--clr: #ff3d58; --h: 74px" id="hour" class="hand"><i></i></div>
-            <div style="--clr: #00a6ff; --h: 84px" id="min" class="hand"><i></i></div>
-            <div style="--clr: #ffffff; --h: 94px" id="sec" class="hand"><i></i></div>
 
-            <span style="--i: 1"><b>1</b></span>
-            <span style="--i: 2"><b>2</b></span>
-            <span style="--i: 3"><b>3</b></span>
-            <span style="--i: 4"><b>4</b></span>
-            <span style="--i: 5"><b>5</b></span>
-            <span style="--i: 6"><b>6</b></span>
-            <span style="--i: 7"><b>7</b></span>
-            <span style="--i: 8"><b>8</b></span>
-            <span style="--i: 9"><b>9</b></span>
-            <span style="--i: 10"><b>10</b></span>
-            <span style="--i: 11"><b>11.</b></span>
-            <span style="--i: 12"><b>12</b></span>
-        </div>
-        <div id="time-until-home"></div> </div>
+    <div id="shift-selection">
+        <label for="shift">Select Shift:</label>
+        <select id="shift">
+            <option value="morning">Morning (5 AM - 2 PM)</option>
+            <option value="mid">Mid (1 PM - 10 PM)</option>
+            <option value="night">Night (9 PM - 6 AM)</option>
+        </select>
+    </div>
 
-    <script src="script.js"></script>
+    <div id="timer"></div>
+
     <script>
-        function updateTimeUntilHome() {
+        const timerDisplay = document.getElementById('timer');
+        const shiftSelect = document.getElementById('shift');
+
+        function updateTimer() {
             const now = new Date();
-            const currentTime = now.getTime();
+            const selectedShift = shiftSelect.value;
+            let endTime;
 
-            // Set work start and end times (adjust as needed)
-            const workStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 5, 0, 0).getTime(); // 5:00 AM
-            const workEndTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0, 0).getTime(); // 2:00 PM (14:00 in 24-hour format)
-
-            let timeLeft = 0;
-            let message = "";
-
-            if (currentTime < workStartTime) {
-                timeLeft = workStartTime - currentTime;
-                message = "Time until work starts: ";
-            } else if (currentTime < workEndTime) {
-                timeLeft = workEndTime - currentTime;
-                message = "Time until go home: ";
-            } else {
-                message = "Work day is over!";
-                timeLeft = 0; // Or you could calculate time until the next work day
+            if (selectedShift === 'morning') {
+                endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0, 0); // 2 PM
+            } else if (selectedShift === 'mid') {
+                endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 22, 0, 0); // 10 PM
+            } else { // night
+                endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (now.getHours() >= 21 ? 1 : 0), 6, 0, 0); // 6 AM (next day if past 9 PM)
             }
 
-            if (timeLeft > 0) {
+            const timeLeft = endTime.getTime() - now.getTime();
+
+            if (timeLeft <= 0) {
+                timerDisplay.textContent = "Shift Ended! 🎉";
+                celebrate();
+            } else {
                 const hours = Math.floor(timeLeft / (1000 * 60 * 60));
                 const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-
-                message += `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                timerDisplay.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }
-
-            document.getElementById('time-until-home').textContent = message;
         }
 
-        setInterval(updateTimeUntilHome, 1000); // Update every second
-        updateTimeUntilHome(); // Call initially to avoid delay
+        function celebrate() {
+            const numConfetti = 100; // Number of confetti pieces
+            for (let i = 0; i < numConfetti; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = `${Math.random() * 100}vw`; // Random horizontal position
+                confetti.style.animationDelay = `${Math.random() * 2}s`; // Random start delay
+                document.body.appendChild(confetti);
+
+                // Remove confetti after animation
+                setTimeout(() => {
+                    confetti.remove();
+                }, 3000); // Match animation duration
+            }
+        }
+
+
+        setInterval(updateTimer, 1000);
+        updateTimer(); // Initial call
     </script>
+
 </body>
 </html>
